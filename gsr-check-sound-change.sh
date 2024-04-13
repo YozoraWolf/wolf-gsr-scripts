@@ -1,39 +1,32 @@
 #!/bin/bash
 
-FREQUENCY=1 # Check every 1 second(s)
+FREQUENCY=1 # check every 1 second(s)
 
 echo "Started GSR Sound Change Monitor..."
 
-# Function to restart the start_replay.sh script
+# func to restart the start_replay.sh script with the new default sink
 restart_start_replay() {
-    # Kill the existing process if it's running
+    # kill the existing process if it's running
     killall -SIGINT gpu-screen-recorder
-    # Start the script in a separate process
-    ("$HOME/.gsr/gsr-start-replay.sh" &)
+    # start the script in a separate process with the new default sink
+    "$HOME/.gsr/gsr-start-replay.sh" $(pactl get-default-sink).monitor &
 }
 
-# Get the number of audio sinks (outputs)
-get_audio_sinks_count() {
-    pacmd list-sinks | grep -c 'index:'
-}
+# get initial default sink
+OLD_DEFAULT_SINK=$(pactl get-default-sink)
 
-# Get initial number of sinks (or monitors)
-OLD_AUDIO_SINKS_COUNT=$(get_audio_sinks_count)
-
-# Infinite loop to continuously monitor for changes
+# loop to monitor for changes
 while true; do
-    # Get the current number of sinks
-    NEW_AUDIO_SINKS_COUNT=$(get_audio_sinks_count)
+    # Get the current default sink
+    NEW_DEFAULT_SINK=$(pactl get-default-sink)
 
-    # Check if the number of sinks has changed
-    if [[ "$NEW_AUDIO_SINKS_COUNT" -ne "$OLD_AUDIO_SINKS_COUNT" ]]; then
-        notify-send "gpu-screen-recorder" "Audio sinks changed, restarting start-replay.sh..."
-        echo -e "\e[92mgpu-screen-recorder\e[0m: Audio sinks changed, restarting start-replay.sh..."
-        # Restart the start_replay.sh script to adapt to the added/removed sinks
-        restart_start_replay &
-        OLD_AUDIO_SINKS_COUNT="$NEW_AUDIO_SINKS_COUNT"
+    # check if the default sink has changed
+    if [[ $NEW_DEFAULT_SINK != $OLD_DEFAULT_SINK ]]; then
+        notify-send "gpu-screen-recorder" "Default audio sink changed, restarting start-replay.sh..."
+        echo -e "\e[92mgpu-screen-recorder\e[0m: Default audio sink changed, restarting start-replay.sh..."
+        # restart the start_replay.sh script with the new default sink
+        restart_start_replay
+        OLD_DEFAULT_SINK=$NEW_DEFAULT_SINK
     fi
-    sleep $FREQUENCY # Adjusted on init
+    sleep $FREQUENCY
 done
-
-# TODO: Replays break when restarting the script. Need to find a way to make it start replay all over.
