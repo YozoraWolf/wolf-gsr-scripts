@@ -23,7 +23,7 @@ fi
 echo "\e[92mSelected audio sinks:\e[0m $audio_sinks"
 
 # define args for gsr
-args="-w screen -fm vfr -f 60 -a $audio_sinks -ac opus -k hevc -c mp4 -r 60 -o $video_path"
+args="-w screen -fm cfr -f 60 -a $audio_sinks -ac aac -k h264 -c mp4 -r 60 -o $video_path"
 
 # debug, can be commented.
 echo "\e[36mStarting recording with the following arguments:\e[0m $args"
